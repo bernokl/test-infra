@@ -15,12 +15,6 @@ periodics:
     - name: apisnoop-gate
       image: gcr.io/k8s-staging-apisnoop/snoopdb:v20200923-v2020.09.23-1-gb3afc41
       env:
-      - name: POSTGRES_USER
-        value: postgres
-      - name: POSTGRES_PASSWORD
-        value: postgres
-      - name: POSTGRES_DB
-        value: postgres
       - name: PGDATA
         value: /var/lib/postgresql/data/pgdata
       securityContext:
