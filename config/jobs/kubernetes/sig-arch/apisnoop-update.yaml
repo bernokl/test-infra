@@ -1,0 +1,53 @@
+periodics:
+- interval: 3h
+  name: apisnoop-auto-update
+  annotations:
+    testgrid-dashboards: sig-arch-conformance
+    testgrid-tab-name: apisnoop-auto-update
+    test-grid-alert-email: kubernetes-sig-arch-conformance-test-failures@googlegroups.com
+    testgrid-num-failures-to-alert: '1'
+    description: 'Uses APISnoop to check that new GA endpoints are conformance tested in latest e2e test run'
+  decorate: true
+  spec:
+    securityContext:
+      fsGroup: 70
+    containers:
+    - name: apisnoop-auto-update
+      image: gcr.io/cloud-builders/docker
+      env:
+        #TODO: we want to add our github token here
+      #- name: PGDATA
+      #  value: /var/lib/postgresql/data/pgdata
+# The intent here is to run the container as the postgres, we want to avoid root execution
+      securityContext:
+        readOnlyRootFilesystem: true
+        runAsUser: 70
+        runAsGroup: 70
+        allowPrivilegeEscalation: false
+      args:
+      - '-c'
+      - |
+        set -x
+        pwd
+        # install github.com/github/hub/
+        curl -L https://github.com/github/hub/releases/download/v2.14.2/hub-linux-amd64-2.14.2.tgz \
+          | tar -x -v -z --strip-components 2 hub-linux-amd64-2.14.2/bin/hub
+        git clone https://$(cat github-token.txt)@github.com/cncf/apisnoop
+        cp -r apisnoop /tmp/
+        cd /tmp/apisnoop
+        git config --global user.email "cncf-ci@ii.coop"
+        git config --global user.name "CNCF CI Bot"
+      volumeMounts:
+        - name: tmp
+          mountPath: /tmp
+        - name: var-lib-postgresql
+          mountPath: /var/lib/postgresql
+        - name: var-run-postgresql
+          mountPath: /var/run/postgresql
+    volumes:
+      - name: tmp
+        emptyDir: {}
+      - name: var-lib-postgresql
+        emptyDir: {}
+      - name: var-run-postgresql
+        emptyDir: {}
